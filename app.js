@@ -198,8 +198,13 @@ function renderHome() {
 
           La première équipe à atteindre
           <strong>2 croix</strong>
-          laisse alors une chance à l'autre équipe
-          de prendre la main.
+          est bloquée.
+          
+          <br>
+          
+          L'autre équipe continue de jouer
+          jusqu'à atteindre elle aussi
+          <strong>2 croix</strong>.
 
         </div>
 
