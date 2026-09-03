@@ -100,21 +100,111 @@ function currentQuestion() {
   return QUESTIONS[state.questionIndex] || QUESTIONS[0];
 }
 
+function rankedAnswers() {
 
-function totalAvailablePoints() {
-  return currentQuestion()
-    .answers
-    .reduce(
-      (sum, a) => sum + (Number(a.votes) || 0),
-      0
-    ) * state.multiplier;
+  return [...currentQuestion().answers]
+    .sort((a, b) =>
+      (Number(b.votes) || 0) -
+      (Number(a.votes) || 0)
+    );
+}
+
+function getTopSix() {
+
+  return rankedAnswers()
+    .slice(0, 6);
+
 }
 
 
+function calculatePoints() {
+
+  const topSix = getTopSix();
+
+  const totalVotes =
+    topSix.reduce(
+      (sum, a) =>
+        sum + (Number(a.votes) || 0),
+      0
+    );
+
+  if (totalVotes === 0) {
+    return [];
+  }
+
+  const rawPoints =
+    topSix.map((answer, index) => {
+
+      const exact =
+        (Number(answer.votes) / totalVotes) * 100;
+
+      return {
+        index,
+        text: answer.text,
+        votes: Number(answer.votes) || 0,
+        exact
+      };
+
+    });
+
+  // Points entiers avec un total EXACT de 100
+  const points =
+    rawPoints.map(item =>
+      Math.floor(item.exact)
+    );
+
+  let remaining =
+    100 -
+    points.reduce(
+      (sum, value) => sum + value,
+      0
+    );
+
+  const decimals =
+    rawPoints
+      .map((item, index) => ({
+        index,
+        decimal:
+          item.exact -
+          Math.floor(item.exact)
+      }))
+      .sort(
+        (a, b) =>
+          b.decimal -
+          a.decimal
+      );
+
+  for (
+    let i = 0;
+    i < remaining;
+    i++
+  ) {
+
+    points[
+      decimals[i].index
+    ]++;
+
+  }
+
+  return topSix.map((answer, index) => ({
+    ...answer,
+    points: points[index]
+  }));
+}
+
 function answerPoints(answer) {
-  return (
-    Number(answer.votes) || 0
-  ) * state.multiplier;
+
+  const topSix =
+    calculatePoints();
+
+  const found =
+    topSix.find(
+      a => a.text === answer.text
+    );
+
+  return found
+    ? found.points
+    : 0;
 }
 
 
@@ -305,8 +395,8 @@ function renderDisplay() {
 
   const q = currentQuestion();
 
-  const answers =
-    q.answers || [];
+ const answers =
+  getTopSix();
 
   return `
 
@@ -344,7 +434,6 @@ function renderDisplay() {
           ?
 
           answers
-            .slice(0, 6)
             .map((a, i) => {
 
               const isRevealed =
@@ -368,8 +457,7 @@ function renderDisplay() {
 
                     ${
                       isRevealed
-                        ? Number(a.votes) *
-                          state.multiplier
+                        ? a.points
                         : "?"
                     }
 
@@ -408,7 +496,7 @@ function renderAdmin() {
   const q = currentQuestion();
 
   const answers =
-    q.answers || [];
+  rankedAnswers();
 
   return `
 
@@ -458,7 +546,6 @@ function renderAdmin() {
             ?
 
             answers
-              .slice(0, 6)
               .map((a, i) => `
 
                 <div
@@ -780,8 +867,11 @@ function bindEvents() {
   state.revealed.push(i);
 
   // Ajouter les points à l'équipe qui vient de répondre
-  state.scores[state.activeTeam] +=
-    answerPoints(currentQuestion().answers[i]);
+ const topSix =
+  getTopSix();
+
+state.scores[state.activeTeam] +=
+  answerPoints(topSix[i]);
 
   // Changer d'équipe
   const otherTeam =
