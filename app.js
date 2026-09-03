@@ -10,6 +10,8 @@ const defaultState = {
   // Réponses révélées pour la question actuelle
   revealed: [],
 
+  lastRevealed: null,
+
   // Scores des équipes
   scores: [0, 0],
 
@@ -132,7 +134,8 @@ function calculatePoints() {
     return [];
   }
 
-  const rawPoints =
+  // Calcul exact des points
+  const calculated =
     topSix.map((answer, index) => {
 
       const exact =
@@ -142,54 +145,36 @@ function calculatePoints() {
         index,
         text: answer.text,
         votes: Number(answer.votes) || 0,
-        exact
+        exact,
+        points: Math.floor(exact)
       };
 
     });
 
-  // Points entiers avec un total EXACT de 100
-  const points =
-    rawPoints.map(item =>
-      Math.floor(item.exact)
-    );
-
+  // Combien de points manquent pour arriver exactement à 100 ?
   let remaining =
     100 -
-    points.reduce(
-      (sum, value) => sum + value,
+    calculated.reduce(
+      (sum, answer) =>
+        sum + answer.points,
       0
     );
 
-  const decimals =
-    rawPoints
-      .map((item, index) => ({
-        index,
-        decimal:
-          item.exact -
-          Math.floor(item.exact)
-      }))
-      .sort(
-        (a, b) =>
-          b.decimal -
-          a.decimal
-      );
+  // On donne les points restants
+  // aux réponses ayant les plus gros décimaux
+  calculated
+    .slice()
+    .sort(
+      (a, b) =>
+        (b.exact - Math.floor(b.exact)) -
+        (a.exact - Math.floor(a.exact))
+    )
+    .slice(0, remaining)
+    .forEach(answer => {
+      calculated[answer.index].points++;
+    });
 
-  for (
-    let i = 0;
-    i < remaining;
-    i++
-  ) {
-
-    points[
-      decimals[i].index
-    ]++;
-
-  }
-
-  return topSix.map((answer, index) => ({
-    ...answer,
-    points: points[index]
-  }));
+  return calculated;
 }
 
 function answerPoints(answer) {
@@ -441,7 +426,13 @@ function renderDisplay() {
 
               return `
 
-               <div class="answer-row ${isRevealed ? "revealed" : ""}">
+              <div class="answer-row ${
+  isRevealed ? "revealed" : ""
+} ${
+  state.lastRevealed === i
+    ? "reveal-animation"
+    : ""
+}">
 
                   <div class="answer-text">
 
@@ -865,6 +856,8 @@ function bindEvents() {
 
   // Révéler la réponse
   state.revealed.push(i);
+
+  state.lastRevealed = i;
 
   // Ajouter les points à l'équipe qui vient de répondre
  const topSix =
