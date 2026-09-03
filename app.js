@@ -125,8 +125,8 @@ function calculatePoints() {
 
   const totalVotes =
     topSix.reduce(
-      (sum, a) =>
-        sum + (Number(a.votes) || 0),
+      (sum, answer) =>
+        sum + (Number(answer.votes) || 0),
       0
     );
 
@@ -134,22 +134,22 @@ function calculatePoints() {
     return [];
   }
 
-  // Calcul des points proportionnels
-  const exactPoints =
-    topSix.map(answer => ({
-      ...answer,
-      exactPoints:
-        (Number(answer.votes) / totalVotes) * 100
-    }));
-
-  // On commence par arrondir vers le bas
+  // Calcul des points exacts
   const result =
-    exactPoints.map(answer => ({
-      ...answer,
-      points: Math.floor(answer.exactPoints)
-    }));
+    topSix.map(answer => {
 
-  // Points restant à distribuer
+      const exact =
+        (Number(answer.votes) / totalVotes) * 100;
+
+      return {
+        ...answer,
+        exactPoints: exact,
+        points: Math.floor(exact)
+      };
+
+    });
+
+  // Nombre de points restant pour arriver à 100
   let remaining =
     100 -
     result.reduce(
@@ -159,11 +159,12 @@ function calculatePoints() {
     );
 
   /*
-    On distribue les points restants
-    par groupe de votes identiques.
+    On ajoute les points restants aux réponses
+    ayant les plus gros décimaux.
 
-    Ainsi deux réponses avec le même nombre
-    de votants auront toujours le même score.
+    IMPORTANT :
+    Les réponses avec le même nombre de votes
+    ont toujours le même nombre de points.
   */
 
   const groups = {};
@@ -181,37 +182,66 @@ function calculatePoints() {
 
   });
 
-  // Groupes classés par importance de leur partie décimale
-  const groupsSorted =
-    Object.values(groups)
-      .sort((groupA, groupB) => {
+  const sortedGroups =
+    Object.values(groups).sort((a, b) => {
 
-        const decimalA =
-          result[groupA[0]].exactPoints -
-          Math.floor(
-            result[groupA[0]].exactPoints
-          );
+      const decimalA =
+        result[a[0]].exactPoints -
+        Math.floor(
+          result[a[0]].exactPoints
+        );
 
-        const decimalB =
-          result[groupB[0]].exactPoints -
-          Math.floor(
-            result[groupB[0]].exactPoints
-          );
+      const decimalB =
+        result[b[0]].exactPoints -
+        Math.floor(
+          result[b[0]].exactPoints
+        );
 
-        return decimalB - decimalA;
-      });
+      return decimalB - decimalA;
 
-  for (const group of groupsSorted) {
-
-    if (remaining < group.length) {
-      break;
-    }
-
-    group.forEach(index => {
-      result[index].points++;
     });
 
-    remaining -= group.length;
+  /*
+    On donne les points groupe par groupe.
+    Ainsi les égalités restent des égalités.
+  */
+
+  for (const group of sortedGroups) {
+
+    if (remaining >= group.length) {
+
+      group.forEach(index => {
+        result[index].points++;
+      });
+
+      remaining -= group.length;
+
+    }
+
+  }
+
+  /*
+    Sécurité :
+    si un point reste à distribuer et qu'il
+    n'est pas possible de le donner à un groupe
+    sans casser une égalité, on l'ajoute à la
+    dernière réponse seulement si elle n'est pas
+    à égalité avec la cinquième.
+  */
+
+  if (remaining > 0) {
+
+    const last = result.length - 1;
+    const fifth = result.length - 2;
+
+    if (
+      result.length < 6 ||
+      result[last].votes !== result[fifth].votes
+    ) {
+      result[last].points += remaining;
+      remaining = 0;
+    }
+
   }
 
   return result;
@@ -424,8 +454,8 @@ function renderDisplay() {
 
   const q = currentQuestion();
 
- const answers =
-  getTopSix();
+const answers =
+  calculatePoints();
 
   return `
 
