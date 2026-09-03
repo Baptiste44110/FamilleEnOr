@@ -352,10 +352,7 @@ function renderDisplay() {
 
               return `
 
-                <div
-                  class="answer-row
-                  ${isRevealed ? "" : "hidden"}"
-                >
+               <div class="answer-row ${isRevealed ? "revealed" : ""}">
 
                   <div class="answer-text">
 
@@ -770,26 +767,34 @@ function bindEvents() {
 
         if (action === "reveal") {
 
-          const i =
-            Number(btn.dataset.index);
+  const i =
+    Number(btn.dataset.index);
 
-          if (
-            state.revealed.includes(i)
-          ) {
+  // Si la réponse est déjà révélée,
+  // on ne fait rien.
+  if (state.revealed.includes(i)) {
+    return;
+  }
 
-            state.revealed =
-              state.revealed.filter(
-                x => x !== i
-              );
+  // Révéler la réponse
+  state.revealed.push(i);
 
-          } else {
+  // Ajouter les points à l'équipe qui vient de répondre
+  state.scores[state.activeTeam] +=
+    answerPoints(currentQuestion().answers[i]);
 
-            state.revealed.push(i);
+  // Changer d'équipe
+  const otherTeam =
+    state.activeTeam === 0 ? 1 : 0;
 
-          }
+  // Si l'autre équipe n'a pas encore 2 croix,
+  // elle prend la main.
+  if (state.crosses[otherTeam] < 2) {
+    state.activeTeam = otherTeam;
+  }
 
-          saveState();
-        }
+  saveState();
+}
 
 
         /* -------------------------
@@ -800,22 +805,36 @@ function bindEvents() {
 
   const team = state.activeTeam;
 
-  // Si cette équipe a déjà 2 croix,
-  // elle ne peut plus recevoir de croix.
+  // Une équipe qui a déjà 2 croix ne peut plus jouer.
   if (state.crosses[team] >= 2) {
     return;
   }
 
-  // Ajoute une croix à l'équipe qui joue.
+  // Ajouter une croix
   state.crosses[team] =
     Math.min(
       2,
       state.crosses[team] + 1
     );
 
-  // Si cette équipe arrive à 2 croix,
-  // l'autre équipe prend automatiquement la suite.
-  updateActiveTeam();
+  const otherTeam =
+    team === 0 ? 1 : 0;
+
+  // Si l'équipe vient d'atteindre 2 croix,
+  // l'autre équipe prend la main et continue.
+  if (state.crosses[team] >= 2) {
+
+    if (state.crosses[otherTeam] < 2) {
+      state.activeTeam = otherTeam;
+    }
+
+  } else {
+
+    // Sinon, on passe simplement la main à l'autre équipe.
+    if (state.crosses[otherTeam] < 2) {
+      state.activeTeam = otherTeam;
+    }
+  }
 
   saveState();
 }
