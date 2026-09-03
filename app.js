@@ -889,6 +889,19 @@ state.scores[state.activeTeam] +=
   saveState();
 }
 
+if (action === "revealall") {
+
+  // Révéler les 6 réponses du Top 6
+  state.revealed = [0, 1, 2, 3, 4, 5];
+
+  // IMPORTANT :
+  // aucun point n'est ajouté ici.
+
+  state.lastRevealed = null;
+
+  saveState();
+}
+
 
         /* -------------------------
            MAUVAISE RÉPONSE
