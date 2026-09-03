@@ -5,7 +5,29 @@
 const QUESTIONS = [
   {
     question: "Citez un plat français.",
-    answers: []
+    answers: [
+    { text: "Bœuf bourguignon", votes: 22 },
+    { text: "Raclette", votes: 11 },
+    { text: "Tartiflette", votes: 8 },
+    { text: "Choucroute", votes: 6 },
+    { text: "Cassoulet", votes: 6 },
+    { text: "Quiche lorraine", votes: 4 },
+    { text: "Poulet frites", votes: 4 },
+    { text: "Pot-au-feu", votes: 3 },
+    { text: "Blanquette de veau", votes: 2 },
+    { text: "Bouillabaisse", votes: 2 },
+    { text: "Steak frites", votes: 2 },
+    { text: "Ratatouille", votes: 2 },
+    { text: "Flammekueche", votes: 1 },
+    { text: "Rougaille saucisse", votes: 1 },
+    { text: "Côte de bœuf", votes: 1 },
+    { text: "Croziflette", votes: 1 },
+    { text: "Daube", votes: 1 },
+    { text: "Bœuf carotte", votes: 1 },
+    { text: "Fondue", votes: 1 },
+    { text: "Moules-frites", votes: 1 },
+    { text: "Galette-saucisse", votes: 1 }
+  ]
   },
   {
     question: "Citez un prénom masculin commençant par M.",
