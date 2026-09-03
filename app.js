@@ -134,120 +134,102 @@ function calculatePoints() {
     return [];
   }
 
-  // Calcul des points exacts
-  const result =
-    topSix.map(answer => {
+  // Calcul proportionnel exact
+  const result = topSix.map(answer => {
 
-      const exact =
-        (Number(answer.votes) / totalVotes) * 100;
+    const exact =
+      (Number(answer.votes) / totalVotes) * 100;
 
-      return {
-        ...answer,
-        exactPoints: exact,
-        points: Math.floor(exact)
-      };
+    return {
+      ...answer,
+      exactPoints: exact,
+      points: Math.floor(exact)
+    };
 
-    });
+  });
 
-  // Nombre de points restant pour arriver à 100
-  let remaining =
-    100 -
+  // Points déjà attribués
+  let totalPoints =
     result.reduce(
       (sum, answer) =>
         sum + answer.points,
       0
     );
 
-  /*
-    On ajoute les points restants aux réponses
-    ayant les plus gros décimaux.
+  // On ajoute les points manquants
+  // en partant de la dernière réponse.
+  //
+  // Si deux réponses sont à égalité,
+  // elles restent à égalité.
 
-    IMPORTANT :
-    Les réponses avec le même nombre de votes
-    ont toujours le même nombre de points.
-  */
+  for (
+    let i = result.length - 1;
+    i >= 0 && totalPoints < 100;
+    i--
+  ) {
 
-  const groups = {};
+    const currentVotes =
+      Number(result[i].votes) || 0;
 
-  result.forEach((answer, index) => {
+    const previousVotes =
+      i > 0
+        ? Number(result[i - 1].votes) || 0
+        : null;
 
-    const votes =
-      Number(answer.votes) || 0;
-
-    if (!groups[votes]) {
-      groups[votes] = [];
+    // Si cette réponse est à égalité avec
+    // la précédente, on ne lui donne pas
+    // le point seule.
+    if (
+      previousVotes !== null &&
+      currentVotes === previousVotes
+    ) {
+      continue;
     }
 
-    groups[votes].push(index);
-
-  });
-
-  const sortedGroups =
-    Object.values(groups).sort((a, b) => {
-
-      const decimalA =
-        result[a[0]].exactPoints -
-        Math.floor(
-          result[a[0]].exactPoints
-        );
-
-      const decimalB =
-        result[b[0]].exactPoints -
-        Math.floor(
-          result[b[0]].exactPoints
-        );
-
-      return decimalB - decimalA;
-
-    });
-
-  /*
-    On donne les points groupe par groupe.
-    Ainsi les égalités restent des égalités.
-  */
-
-  for (const group of sortedGroups) {
-
-    if (remaining >= group.length) {
-
-      group.forEach(index => {
-        result[index].points++;
-      });
-
-      remaining -= group.length;
-
-    }
-
+    result[i].points++;
+    totalPoints++;
   }
 
   /*
-    Sécurité :
-    si un point reste à distribuer et qu'il
-    n'est pas possible de le donner à un groupe
-    sans casser une égalité, on l'ajoute à la
-    dernière réponse seulement si elle n'est pas
-    à égalité avec la cinquième.
+    Si un point reste parce que les dernières
+    réponses sont à égalité, on cherche une
+    réponse qui n'est pas à égalité avec sa voisine.
   */
 
-  if (remaining > 0) {
+  if (totalPoints < 100) {
 
-    const last = result.length - 1;
-    const fifth = result.length - 2;
-
-    if (
-      result.length < 6 ||
-      result[last].votes !== result[fifth].votes
+    for (
+      let i = 0;
+      i < result.length && totalPoints < 100;
+      i++
     ) {
-      result[last].points += remaining;
-      remaining = 0;
-    }
 
+      const currentVotes =
+        Number(result[i].votes) || 0;
+
+      const nextVotes =
+        i < result.length - 1
+          ? Number(result[i + 1].votes) || 0
+          : null;
+
+      if (
+        nextVotes === null ||
+        currentVotes !== nextVotes
+      ) {
+
+        result[i].points++;
+        totalPoints++;
+      }
+    }
   }
 
   return result;
 }
-
 function answerPoints(answer) {
+
+  if (!answer) {
+    return 0;
+  }
 
   const topSix =
     calculatePoints();
@@ -299,7 +281,6 @@ function render() {
 
   // L'animation ne doit concerner
   // que le dernier dévoilement.
-  state.lastRevealed = null;
 }
 
 
@@ -640,18 +621,26 @@ function renderAdmin() {
 
                   </div>
 
-                  <button
-                    data-action="reveal"
-                    data-index="${i}"
-                  >
-
-                    ${
-                      state.revealed.includes(i)
-                        ? "Masquer"
-                        : "Révéler"
-                    }
-
-                  </button>
+                 ${
+  i < 6
+    ? `
+      <button
+        data-action="reveal"
+        data-index="${i}"
+      >
+        ${
+          state.revealed.includes(i)
+            ? "Masquer"
+            : "Révéler"
+        }
+      </button>
+    `
+    : `
+      <span class="muted">
+        Hors Top 6
+      </span>
+    `
+}
 
                 </div>
 
