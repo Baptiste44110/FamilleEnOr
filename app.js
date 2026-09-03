@@ -226,6 +226,10 @@ function render() {
   }
 
   bindEvents();
+
+  // L'animation ne doit concerner
+  // que le dernier dévoilement.
+  state.lastRevealed = null;
 }
 
 
@@ -624,6 +628,12 @@ function renderAdmin() {
           >
             ✕ Mauvaise réponse
           </button>
+
+          <button
+  data-action="revealall"
+>
+  👁 Afficher les 6 réponses
+</button>
 
           <button data-action="resetwrong">
             Réinitialiser les ✕
