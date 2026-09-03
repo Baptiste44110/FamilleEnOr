@@ -692,6 +692,30 @@ function renderAdminTeam(team, name) {
   `;
 }
 
+function updateActiveTeam() {
+
+  // Si les deux équipes ont 2 croix,
+  // la manche est terminée.
+  if (
+    state.crosses[0] >= 2 &&
+    state.crosses[1] >= 2
+  ) {
+    return;
+  }
+
+  // Si l'équipe active a déjà 2 croix,
+  // elle ne peut plus jouer.
+  if (state.crosses[state.activeTeam] >= 2) {
+
+    const otherTeam =
+      state.activeTeam === 0 ? 1 : 0;
+
+    // L'autre équipe continue.
+    if (state.crosses[otherTeam] < 2) {
+      state.activeTeam = otherTeam;
+    }
+  }
+}
 
 /* =========================================================
    ÉVÉNEMENTS
@@ -767,21 +791,29 @@ function bindEvents() {
            MAUVAISE RÉPONSE
         ------------------------- */
 
-        if (action === "wrong") {
+       if (action === "wrong") {
 
-          const team =
-            state.activeTeam;
+  const team = state.activeTeam;
 
-          // Maximum 2 croix
-          state.crosses[team] =
-            Math.min(
-              2,
-              state.crosses[team] + 1
-            );
+  // Si cette équipe a déjà 2 croix,
+  // elle ne peut plus recevoir de croix.
+  if (state.crosses[team] >= 2) {
+    return;
+  }
 
-          saveState();
-        }
+  // Ajoute une croix à l'équipe qui joue.
+  state.crosses[team] =
+    Math.min(
+      2,
+      state.crosses[team] + 1
+    );
 
+  // Si cette équipe arrive à 2 croix,
+  // l'autre équipe prend automatiquement la suite.
+  updateActiveTeam();
+
+  saveState();
+}
 
         /* -------------------------
            RESET CROIX
@@ -799,14 +831,21 @@ function bindEvents() {
            CHANGER D'ÉQUIPE
         ------------------------- */
 
-        if (action === "team") {
+       if (action === "team") {
 
-          state.activeTeam =
-            Number(btn.dataset.team);
+  const team =
+    Number(btn.dataset.team);
 
-          saveState();
-        }
+  // Une équipe ayant déjà 2 croix
+  // ne peut plus reprendre la main.
+  if (state.crosses[team] >= 2) {
+    return;
+  }
 
+  state.activeTeam = team;
+
+  saveState();
+}
 
         /* -------------------------
            AJOUTER DES POINTS
