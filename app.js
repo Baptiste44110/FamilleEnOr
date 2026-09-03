@@ -3,23 +3,42 @@ const isDisplay = new URLSearchParams(location.search).get("mode") === "display"
 const CHANNEL_NAME = "famille-en-or";
 
 const defaultState = {
+  screen: "home",
+
   questionIndex: 0,
+
+  // Réponses révélées pour la question actuelle
   revealed: [],
-  wrong: 0,
+
+  // Scores des équipes
   scores: [0, 0],
+
+  // Nombre de croix de chaque équipe
+  crosses: [0, 0],
+
+  // Équipe qui joue actuellement
   activeTeam: 0,
+
+  // Équipe qui commence la question
+  startingTeam: 0,
+
   multiplier: 1
 };
 
 let state = loadState();
 
-const channel = "BroadcastChannel" in window ? new BroadcastChannel(CHANNEL_NAME) : null;
-if (channel) channel.onmessage = (e) => {
-  if (e.data?.type === "state") {
-    state = e.data.state;
-    render();
-  }
-};
+const channel = "BroadcastChannel" in window
+  ? new BroadcastChannel(CHANNEL_NAME)
+  : null;
+
+if (channel) {
+  channel.onmessage = (e) => {
+    if (e.data?.type === "state") {
+      state = e.data.state;
+      render();
+    }
+  };
+}
 
 window.addEventListener("storage", (e) => {
   if (e.key === "famille-en-or-state" && e.newValue) {
@@ -28,33 +47,80 @@ window.addEventListener("storage", (e) => {
   }
 });
 
+
+/* =========================================================
+   SAUVEGARDE
+   ========================================================= */
+
 function loadState() {
   try {
-    return JSON.parse(localStorage.getItem("famille-en-or-state")) || structuredClone(defaultState);
+    const saved = JSON.parse(
+      localStorage.getItem("famille-en-or-state")
+    );
+
+    if (!saved) {
+      return structuredClone(defaultState);
+    }
+
+    // Compatibilité avec ton ancienne version
+    return {
+      ...structuredClone(defaultState),
+      ...saved,
+      crosses: saved.crosses || [0, 0],
+      startingTeam: saved.startingTeam ?? 0,
+      screen: saved.screen ?? "home"
+    };
+
   } catch {
     return structuredClone(defaultState);
   }
 }
 
+
 function saveState() {
-  localStorage.setItem("famille-en-or-state", JSON.stringify(state));
-  channel?.postMessage({ type: "state", state });
+  localStorage.setItem(
+    "famille-en-or-state",
+    JSON.stringify(state)
+  );
+
+  channel?.postMessage({
+    type: "state",
+    state
+  });
+
   render();
 }
+
+
+/* =========================================================
+   QUESTIONS
+   ========================================================= */
 
 function currentQuestion() {
   return QUESTIONS[state.questionIndex] || QUESTIONS[0];
 }
 
+
 function totalAvailablePoints() {
-  return currentQuestion().answers.reduce((sum, a) => sum + (Number(a.votes) || 0), 0) * state.multiplier;
+  return currentQuestion()
+    .answers
+    .reduce(
+      (sum, a) => sum + (Number(a.votes) || 0),
+      0
+    ) * state.multiplier;
 }
 
+
 function answerPoints(answer) {
-  // Barème actuel : le nombre de votes devient le nombre de points.
-  // On pourra facilement remplacer cette règle ensuite par un barème fixe 30/25/20/15/10/5.
-  return (Number(answer.votes) || 0) * state.multiplier;
+  return (
+    Number(answer.votes) || 0
+  ) * state.multiplier;
 }
+
+
+/* =========================================================
+   OUTILS
+   ========================================================= */
 
 function escapeHtml(str) {
   return String(str)
@@ -65,179 +131,815 @@ function escapeHtml(str) {
     .replaceAll("'", "&#039;");
 }
 
+
+/* =========================================================
+   AFFICHAGE
+   ========================================================= */
+
 function render() {
-  document.body.className = isDisplay ? "display-mode" : "admin-mode";
-  app.innerHTML = isDisplay ? renderDisplay() : renderAdmin();
+
+  document.body.className = isDisplay
+    ? "display-mode"
+    : "admin-mode";
+
+  if (state.screen === "home") {
+    app.innerHTML = renderHome();
+  } else {
+    app.innerHTML = isDisplay
+      ? renderDisplay()
+      : renderAdmin();
+  }
+
   bindEvents();
 }
 
+
+/* =========================================================
+   PAGE D'ACCUEIL
+   ========================================================= */
+
+function renderHome() {
+
+  return `
+    <main class="home">
+
+      <div class="home-card">
+
+        <div class="anniv">
+          ANNIVERSAIRE
+        </div>
+
+        <h1>
+          Alex & Marion
+        </h1>
+
+        <div class="subtitle">
+          Bienvenue dans
+          <strong>Une Famille en Or</strong>
+        </div>
+
+        <div class="rules">
+
+          <strong>Deux équipes s'affrontent :</strong><br>
+
+          Team Alex 🆚 Team Marion
+
+          <br><br>
+
+          À tour de rôle, chaque équipe propose
+          une réponse à la question.
+
+          <br>
+
+          Une mauvaise réponse donne une
+          <strong>✕</strong>.
+
+          <br>
+
+          La première équipe à atteindre
+          <strong>2 croix</strong>
+          laisse alors une chance à l'autre équipe
+          de prendre la main.
+
+        </div>
+
+        <button
+          class="start-btn"
+          data-action="start"
+        >
+          COMMENCER LE JEU
+        </button>
+
+      </div>
+
+    </main>
+  `;
+}
+
+
+/* =========================================================
+   HEADER DU JEU
+   ========================================================= */
+
 function renderHeader() {
+
   return `
     <header class="topbar">
-      <div class="logo">FAMILLE <span>EN OR</span></div>
-      <div class="round">QUESTION ${state.questionIndex + 1} / ${QUESTIONS.length}</div>
+
+      <div class="logo">
+        UNE FAMILLE
+        <span>EN OR</span>
+      </div>
+
+      <div class="round">
+        QUESTION
+        ${state.questionIndex + 1}
+        /
+        ${QUESTIONS.length}
+      </div>
+
     </header>
   `;
 }
 
-function renderDisplay() {
-  const q = currentQuestion();
-  const answers = q.answers || [];
+
+/* =========================================================
+   ÉQUIPE
+   ========================================================= */
+
+function renderTeam(team, name) {
+
+  const active =
+    state.activeTeam === team
+      ? "active"
+      : "";
+
+  const cross1 =
+    state.crosses[team] >= 1
+      ? "on"
+      : "";
+
+  const cross2 =
+    state.crosses[team] >= 2
+      ? "on"
+      : "";
+
   return `
-    ${renderHeader()}
-    <main class="screen">
-      <div class="question">${escapeHtml(q.question)}</div>
+    <div class="team ${active}">
 
-      <div class="board">
-        ${answers.length
-          ? answers.slice(0, 6).map((a, i) => {
-              const isRevealed = state.revealed.includes(i);
+      <div class="team-name">
+        ${name}
+      </div>
+
+      <div class="score">
+        ${state.scores[team]}
+      </div>
+
+      <div class="crosses">
+
+        <div class="cross ${cross1}">
+          ✕
+        </div>
+
+        <div class="cross ${cross2}">
+          ✕
+        </div>
+
+      </div>
+
+    </div>
+  `;
+}
+
+
+/* =========================================================
+   ÉCRAN PUBLIC
+   ========================================================= */
+
+function renderDisplay() {
+
+  const q = currentQuestion();
+
+  const answers =
+    q.answers || [];
+
+  return `
+
+    <main class="game">
+
+      <div class="topbar">
+
+        ${renderTeam(0, "TEAM ALEX")}
+
+        <div class="question-box">
+
+          <div class="round-label">
+            QUESTION
+            ${state.questionIndex + 1}
+            /
+            ${QUESTIONS.length}
+          </div>
+
+          <div class="question">
+            ${escapeHtml(q.question)}
+          </div>
+
+        </div>
+
+        ${renderTeam(1, "TEAM MARION")}
+
+      </div>
+
+
+      <div class="answer-board">
+
+        ${
+          answers.length
+
+          ?
+
+          answers
+            .slice(0, 6)
+            .map((a, i) => {
+
+              const isRevealed =
+                state.revealed.includes(i);
+
               return `
-                <div class="answer ${isRevealed ? "revealed" : ""}">
-                  <span class="rank">${i + 1}</span>
-                  <span class="answer-text">${isRevealed ? escapeHtml(a.text) : "••••••••••••"}</span>
-                  <span class="votes">${isRevealed ? Number(a.votes) * state.multiplier : ""}</span>
-                </div>`;
-            }).join("")
-          : `<div class="empty">Les réponses seront ajoutées après le dépouillement du sondage.</div>`
+
+                <div
+                  class="answer-row
+                  ${isRevealed ? "" : "hidden"}"
+                >
+
+                  <div class="answer-text">
+
+                    ${
+                      isRevealed
+                        ? escapeHtml(a.text)
+                        : "?"
+                    }
+
+                  </div>
+
+                  <div class="answer-points">
+
+                    ${
+                      isRevealed
+                        ? Number(a.votes) *
+                          state.multiplier
+                        : "?"
+                    }
+
+                  </div>
+
+                </div>
+
+              `;
+
+            })
+            .join("")
+
+          :
+
+          `
+            <div class="empty">
+              Les réponses seront ajoutées
+              après le dépouillement du sondage.
+            </div>
+          `
         }
+
       </div>
 
-      <div class="scorebar">
-        <div>ÉQUIPE 1 <strong>${state.scores[0]}</strong></div>
-        <div>ÉQUIPE 2 <strong>${state.scores[1]}</strong></div>
-      </div>
-
-      ${state.wrong ? `<div class="wrong">${"✕".repeat(state.wrong)}</div>` : ""}
     </main>
   `;
 }
+
+
+/* =========================================================
+   ÉCRAN ANIMATEUR
+   ========================================================= */
 
 function renderAdmin() {
+
   const q = currentQuestion();
-  const answers = q.answers || [];
+
+  const answers =
+    q.answers || [];
+
   return `
-    ${renderHeader()}
+
     <main class="admin">
+
       <section class="card">
-        <div class="eyebrow">QUESTION</div>
-        <h1>${escapeHtml(q.question)}</h1>
+
+        <div class="eyebrow">
+          QUESTION
+        </div>
+
+        <h1>
+          ${escapeHtml(q.question)}
+        </h1>
+
         <div class="controls">
-          <button data-action="prev">← Précédente</button>
-          <button class="primary" data-action="next">Suivante →</button>
+
+          <button data-action="prev">
+            ← Précédente
+          </button>
+
+          <button
+            class="primary"
+            data-action="next"
+          >
+            Suivante →
+          </button>
+
         </div>
+
       </section>
 
+
+      <!-- RÉPONSES -->
+
       <section class="card">
-        <div class="eyebrow">RÉPONSES</div>
+
+        <div class="eyebrow">
+          RÉPONSES
+        </div>
+
         <div class="answer-list">
-          ${answers.length
-            ? answers.slice(0, 6).map((a, i) => `
-              <div class="admin-answer ${state.revealed.includes(i) ? "on" : ""}">
-                <div>
-                  <b>#${i + 1} — ${escapeHtml(a.text)}</b>
-                  <small>${a.votes} réponse${a.votes > 1 ? "s" : ""} · ${answerPoints(a)} points</small>
+
+          ${
+            answers.length
+
+            ?
+
+            answers
+              .slice(0, 6)
+              .map((a, i) => `
+
+                <div
+                  class="admin-answer
+                  ${
+                    state.revealed.includes(i)
+                      ? "on"
+                      : ""
+                  }"
+                >
+
+                  <div>
+
+                    <b>
+                      #${i + 1}
+                      —
+                      ${escapeHtml(a.text)}
+                    </b>
+
+                    <small>
+                      ${a.votes}
+                      réponse${a.votes > 1 ? "s" : ""}
+                      ·
+                      ${answerPoints(a)}
+                      points
+                    </small>
+
+                  </div>
+
+                  <button
+                    data-action="reveal"
+                    data-index="${i}"
+                  >
+
+                    ${
+                      state.revealed.includes(i)
+                        ? "Masquer"
+                        : "Révéler"
+                    }
+
+                  </button>
+
                 </div>
-                <button data-action="reveal" data-index="${i}">
-                  ${state.revealed.includes(i) ? "Masquer" : "Révéler"}
-                </button>
-              </div>`).join("")
-            : `<p class="muted">Aucune réponse renseignée pour le moment.</p>`
+
+              `)
+              .join("")
+
+            :
+
+            `
+              <p class="muted">
+                Aucune réponse renseignée
+                pour le moment.
+              </p>
+            `
           }
+
         </div>
+
       </section>
 
+
+      <!-- ÉQUIPES -->
+
       <section class="card">
-        <div class="eyebrow">SCORES</div>
+
+        <div class="eyebrow">
+          ÉQUIPES
+        </div>
+
         <div class="teams">
-          ${[0,1].map(i => `
-            <div class="team ${state.activeTeam === i ? "active" : ""}">
-              <label>Équipe ${i + 1}</label>
-              <div class="big-score">${state.scores[i]}</div>
-              <div class="team-buttons">
-                <button data-action="team" data-team="${i}">Joue</button>
-                <button data-action="add" data-team="${i}">+ points</button>
-                <button data-action="minus" data-team="${i}">−</button>
-              </div>
-            </div>`).join("")}
+
+          ${renderAdminTeam(0, "TEAM ALEX")}
+
+          ${renderAdminTeam(1, "TEAM MARION")}
+
         </div>
+
+
         <div class="controls lower">
-          <button data-action="wrong">✕ Mauvaise réponse</button>
-          <button data-action="resetwrong">Réinitialiser les X</button>
-          <button data-action="reset">Nouvelle partie</button>
+
+          <button
+            data-action="wrong"
+            class="danger"
+          >
+            ✕ Mauvaise réponse
+          </button>
+
+          <button data-action="resetwrong">
+            Réinitialiser les ✕
+          </button>
+
         </div>
+
       </section>
+
+
+      <!-- NAVIGATION -->
+
+      <section class="card">
+
+        <div class="eyebrow">
+          NAVIGATION
+        </div>
+
+        <div class="controls">
+
+          <button data-action="prev">
+            ← Question précédente
+          </button>
+
+          <button
+            data-action="next"
+            class="primary"
+          >
+            Question suivante →
+          </button>
+
+        </div>
+
+      </section>
+
+
+      <!-- RESET -->
+
+      <section class="card">
+
+        <button
+          data-action="reset"
+          class="danger"
+        >
+          Réinitialiser toute la partie
+        </button>
+
+      </section>
+
 
       <section class="hint">
+
         <b>Écran public :</b>
-        ouvre cette même page avec <code>?mode=display</code> sur la TV/projecteur.
-        Les deux écrans se synchronisent automatiquement dans le même navigateur.
+
+        ouvre cette même page avec
+
+        <code>?mode=display</code>
+
+        sur la TV ou le projecteur.
+
+        <br>
+
+        Les deux écrans se synchronisent
+        automatiquement.
+
       </section>
+
     </main>
+
   `;
 }
 
+
+/* =========================================================
+   ÉQUIPE DANS L'ADMIN
+   ========================================================= */
+
+function renderAdminTeam(team, name) {
+
+  const active =
+    state.activeTeam === team
+      ? "active"
+      : "";
+
+  return `
+
+    <div class="team ${active}">
+
+      <label>
+        ${name}
+      </label>
+
+      <div class="big-score">
+        ${state.scores[team]}
+      </div>
+
+
+      <div class="crosses">
+
+        <div class="cross ${
+          state.crosses[team] >= 1
+            ? "on"
+            : ""
+        }">
+          ✕
+        </div>
+
+        <div class="cross ${
+          state.crosses[team] >= 2
+            ? "on"
+            : ""
+        }">
+          ✕
+        </div>
+
+      </div>
+
+
+      <div class="team-buttons">
+
+        <button
+          data-action="team"
+          data-team="${team}"
+        >
+          ${active ? "✓ Joue" : "Faire jouer"}
+        </button>
+
+        <button
+          data-action="add"
+          data-team="${team}"
+        >
+          + points
+        </button>
+
+        <button
+          data-action="minus"
+          data-team="${team}"
+        >
+          − 5
+        </button>
+
+      </div>
+
+    </div>
+
+  `;
+}
+
+
+/* =========================================================
+   ÉVÉNEMENTS
+   ========================================================= */
+
 function bindEvents() {
-  document.querySelectorAll("[data-action]").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const action = btn.dataset.action;
 
-      if (action === "reveal") {
-        const i = Number(btn.dataset.index);
-        state.revealed = state.revealed.includes(i)
-          ? state.revealed.filter(x => x !== i)
-          : [...state.revealed, i];
-        saveState();
-      }
+  document
+    .querySelectorAll("[data-action]")
+    .forEach(btn => {
 
-      if (action === "wrong") {
-        state.wrong = Math.min(3, state.wrong + 1);
-        saveState();
-      }
+      btn.addEventListener("click", () => {
 
-      if (action === "resetwrong") {
-        state.wrong = 0;
-        saveState();
-      }
+        const action =
+          btn.dataset.action;
 
-      if (action === "team") {
-        state.activeTeam = Number(btn.dataset.team);
-        saveState();
-      }
 
-      if (action === "add") {
-        state.scores[Number(btn.dataset.team)] += totalAvailablePoints();
-        saveState();
-      }
+        /* -------------------------
+           COMMENCER
+        ------------------------- */
 
-      if (action === "minus") {
-        const t = Number(btn.dataset.team);
-        state.scores[t] = Math.max(0, state.scores[t] - 5);
-        saveState();
-      }
+        if (action === "start") {
 
-      if (action === "next") {
-        state.questionIndex = Math.min(QUESTIONS.length - 1, state.questionIndex + 1);
-        state.revealed = [];
-        state.wrong = 0;
-        saveState();
-      }
+          state.screen = "game";
 
-      if (action === "prev") {
-        state.questionIndex = Math.max(0, state.questionIndex - 1);
-        state.revealed = [];
-        state.wrong = 0;
-        saveState();
-      }
+          state.questionIndex = 0;
 
-      if (action === "reset") {
-        if (confirm("Réinitialiser toute la partie ?")) {
-          state = structuredClone(defaultState);
+          state.revealed = [];
+
+          state.crosses = [0, 0];
+
+          state.scores = [0, 0];
+
+          // Alex commence
+          state.startingTeam = 0;
+
+          state.activeTeam = 0;
+
+          saveState();
+
+        }
+
+
+        /* -------------------------
+           RÉVÉLER
+        ------------------------- */
+
+        if (action === "reveal") {
+
+          const i =
+            Number(btn.dataset.index);
+
+          if (
+            state.revealed.includes(i)
+          ) {
+
+            state.revealed =
+              state.revealed.filter(
+                x => x !== i
+              );
+
+          } else {
+
+            state.revealed.push(i);
+
+          }
+
           saveState();
         }
-      }
+
+
+        /* -------------------------
+           MAUVAISE RÉPONSE
+        ------------------------- */
+
+        if (action === "wrong") {
+
+          const team =
+            state.activeTeam;
+
+          // Maximum 2 croix
+          state.crosses[team] =
+            Math.min(
+              2,
+              state.crosses[team] + 1
+            );
+
+          saveState();
+        }
+
+
+        /* -------------------------
+           RESET CROIX
+        ------------------------- */
+
+        if (action === "resetwrong") {
+
+          state.crosses = [0, 0];
+
+          saveState();
+        }
+
+
+        /* -------------------------
+           CHANGER D'ÉQUIPE
+        ------------------------- */
+
+        if (action === "team") {
+
+          state.activeTeam =
+            Number(btn.dataset.team);
+
+          saveState();
+        }
+
+
+        /* -------------------------
+           AJOUTER DES POINTS
+        ------------------------- */
+
+        if (action === "add") {
+
+          const team =
+            Number(btn.dataset.team);
+
+          state.scores[team] +=
+            totalAvailablePoints();
+
+          saveState();
+        }
+
+
+        /* -------------------------
+           RETIRER 5 POINTS
+        ------------------------- */
+
+        if (action === "minus") {
+
+          const team =
+            Number(btn.dataset.team);
+
+          state.scores[team] =
+            Math.max(
+              0,
+              state.scores[team] - 5
+            );
+
+          saveState();
+        }
+
+
+        /* -------------------------
+           QUESTION SUIVANTE
+        ------------------------- */
+
+        if (action === "next") {
+
+          if (
+            state.questionIndex <
+            QUESTIONS.length - 1
+          ) {
+
+            state.questionIndex++;
+
+            state.revealed = [];
+
+            state.crosses = [0, 0];
+
+            // L'équipe qui commence change
+            state.startingTeam =
+              state.startingTeam === 0
+                ? 1
+                : 0;
+
+            state.activeTeam =
+              state.startingTeam;
+
+            saveState();
+          }
+        }
+
+
+        /* -------------------------
+           QUESTION PRÉCÉDENTE
+        ------------------------- */
+
+        if (action === "prev") {
+
+          if (
+            state.questionIndex > 0
+          ) {
+
+            state.questionIndex--;
+
+            state.revealed = [];
+
+            state.crosses = [0, 0];
+
+            state.startingTeam =
+              state.startingTeam === 0
+                ? 1
+                : 0;
+
+            state.activeTeam =
+              state.startingTeam;
+
+            saveState();
+          }
+        }
+
+
+        /* -------------------------
+           ACCUEIL
+        ------------------------- */
+
+        if (action === "home") {
+
+          state.screen = "home";
+
+          saveState();
+        }
+
+
+        /* -------------------------
+           RESET COMPLET
+        ------------------------- */
+
+        if (action === "reset") {
+
+          if (
+            confirm(
+              "Réinitialiser toute la partie ?"
+            )
+          ) {
+
+            state =
+              structuredClone(
+                defaultState
+              );
+
+            saveState();
+          }
+        }
+
+      });
+
     });
-  });
 }
+
 
 render();
