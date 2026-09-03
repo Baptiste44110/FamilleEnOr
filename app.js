@@ -134,47 +134,87 @@ function calculatePoints() {
     return [];
   }
 
-  // Calcul exact des points
-  const calculated =
-    topSix.map((answer, index) => {
+  // Calcul des points proportionnels
+  const exactPoints =
+    topSix.map(answer => ({
+      ...answer,
+      exactPoints:
+        (Number(answer.votes) / totalVotes) * 100
+    }));
 
-      const exact =
-        (Number(answer.votes) / totalVotes) * 100;
+  // On commence par arrondir vers le bas
+  const result =
+    exactPoints.map(answer => ({
+      ...answer,
+      points: Math.floor(answer.exactPoints)
+    }));
 
-      return {
-        index,
-        text: answer.text,
-        votes: Number(answer.votes) || 0,
-        exact,
-        points: Math.floor(exact)
-      };
-
-    });
-
-  // Combien de points manquent pour arriver exactement à 100 ?
+  // Points restant à distribuer
   let remaining =
     100 -
-    calculated.reduce(
+    result.reduce(
       (sum, answer) =>
         sum + answer.points,
       0
     );
 
-  // On donne les points restants
-  // aux réponses ayant les plus gros décimaux
-  calculated
-    .slice()
-    .sort(
-      (a, b) =>
-        (b.exact - Math.floor(b.exact)) -
-        (a.exact - Math.floor(a.exact))
-    )
-    .slice(0, remaining)
-    .forEach(answer => {
-      calculated[answer.index].points++;
+  /*
+    On distribue les points restants
+    par groupe de votes identiques.
+
+    Ainsi deux réponses avec le même nombre
+    de votants auront toujours le même score.
+  */
+
+  const groups = {};
+
+  result.forEach((answer, index) => {
+
+    const votes =
+      Number(answer.votes) || 0;
+
+    if (!groups[votes]) {
+      groups[votes] = [];
+    }
+
+    groups[votes].push(index);
+
+  });
+
+  // Groupes classés par importance de leur partie décimale
+  const groupsSorted =
+    Object.values(groups)
+      .sort((groupA, groupB) => {
+
+        const decimalA =
+          result[groupA[0]].exactPoints -
+          Math.floor(
+            result[groupA[0]].exactPoints
+          );
+
+        const decimalB =
+          result[groupB[0]].exactPoints -
+          Math.floor(
+            result[groupB[0]].exactPoints
+          );
+
+        return decimalB - decimalA;
+      });
+
+  for (const group of groupsSorted) {
+
+    if (remaining < group.length) {
+      break;
+    }
+
+    group.forEach(index => {
+      result[index].points++;
     });
 
-  return calculated;
+    remaining -= group.length;
+  }
+
+  return result;
 }
 
 function answerPoints(answer) {
