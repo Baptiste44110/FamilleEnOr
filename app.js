@@ -663,6 +663,46 @@ function renderAdmin() {
 
       </section>
 
+      <!-- ÉQUIPES -->
+
+      <section class="card">
+
+        <div class="eyebrow">
+          ÉQUIPES
+        </div>
+
+        <div class="teams">
+
+          ${renderAdminTeam(0, "TEAM ALEX")}
+
+          ${renderAdminTeam(1, "TEAM MARION")}
+
+        </div>
+
+
+        <div class="controls lower">
+
+          <button
+            data-action="wrong"
+            class="danger"
+          >
+            ✕ Mauvaise réponse
+          </button>
+
+          <button
+  data-action="revealall"
+>
+  👁 Afficher les 6 réponses
+</button>
+
+          <button data-action="resetwrong">
+            Réinitialiser les ✕
+          </button>
+
+        </div>
+
+      </section>
+
 
       <!-- RÉPONSES -->
 
@@ -750,46 +790,7 @@ function renderAdmin() {
       </section>
 
 
-      <!-- ÉQUIPES -->
-
-      <section class="card">
-
-        <div class="eyebrow">
-          ÉQUIPES
-        </div>
-
-        <div class="teams">
-
-          ${renderAdminTeam(0, "TEAM ALEX")}
-
-          ${renderAdminTeam(1, "TEAM MARION")}
-
-        </div>
-
-
-        <div class="controls lower">
-
-          <button
-            data-action="wrong"
-            class="danger"
-          >
-            ✕ Mauvaise réponse
-          </button>
-
-          <button
-  data-action="revealall"
->
-  👁 Afficher les 6 réponses
-</button>
-
-          <button data-action="resetwrong">
-            Réinitialiser les ✕
-          </button>
-
-        </div>
-
-      </section>
-
+      
 
       <!-- NAVIGATION -->
 
