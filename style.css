@@ -704,3 +704,7 @@ code {
 .controls.lower button[data-action="revealall"] {
   margin-left: auto;
 }
+
+.controls button[data-action="endgame"] {
+  margin-left: auto;
+}
