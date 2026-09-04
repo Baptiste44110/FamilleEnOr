@@ -339,6 +339,75 @@ function escapeHtml(str) {
 /* =========================================================
    AFFICHAGE
    ========================================================= */
+function renderResults() {
+
+  const alex = state.scores[0];
+  const marion = state.scores[1];
+
+  let winner = "";
+
+  if (alex > marion) {
+    winner = "TEAM ALEX";
+  } else if (marion > alex) {
+    winner = "TEAM MARION";
+  } else {
+    winner = "ÉGALITÉ";
+  }
+
+  return `
+    <main class="results">
+
+      <div class="results-card">
+
+        <div class="eyebrow">
+          FIN DE PARTIE
+        </div>
+
+        <div class="trophy">
+          🏆
+        </div>
+
+        <h1>
+          ${winner}
+        </h1>
+
+        ${
+          winner === "ÉGALITÉ"
+            ? `
+              <div class="winner-text">
+                Match nul !
+              </div>
+            `
+            : `
+              <div class="winner-text">
+                A GAGNÉ !
+              </div>
+            `
+        }
+
+        <div class="final-scores">
+
+          <div class="final-team">
+            <span>TEAM ALEX</span>
+            <strong>${alex}</strong>
+            <small>points</small>
+          </div>
+
+          <div class="final-team">
+            <span>TEAM MARION</span>
+            <strong>${marion}</strong>
+            <small>points</small>
+          </div>
+
+        </div>
+
+      </div>
+
+      <div class="confetti"></div>
+
+    </main>
+  `;
+}
 
 function render() {
 
@@ -348,6 +417,10 @@ function render() {
 
   if (state.screen === "home") {
     app.innerHTML = renderHome();
+
+  } else if (state.screen === "results") {
+    app.innerHTML = renderResults();
+
   } else {
     app.innerHTML = isDisplay
       ? renderDisplay()
@@ -1169,6 +1242,14 @@ if (action === "revealall") {
   saveState();
 }
 
+        if (action === "endgame") {
+
+  state.screen = "results";
+
+  saveState();
+
+  return;
+}
 
         /* -------------------------
            QUESTION SUIVANTE
