@@ -688,16 +688,18 @@ function renderAdmin() {
           >
             ✕ Mauvaise réponse
           </button>
-
+          
+          <button data-action="resetwrong">
+            Réinitialiser les ✕
+          </button>
+          
           <button
   data-action="revealall"
 >
   👁 Afficher les 6 réponses
 </button>
 
-          <button data-action="resetwrong">
-            Réinitialiser les ✕
-          </button>
+          
 
         </div>
 
