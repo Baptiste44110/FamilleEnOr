@@ -135,31 +135,7 @@ function calculatePoints() {
   }
 
   /*
-    On regroupe les réponses qui ont
-    exactement le même nombre de votes.
-
-    Exemple :
-    6 votes + 6 votes = même groupe
-    donc forcément mêmes points.
-  */
-
-  const groups = {};
-
-  topSix.forEach((answer, index) => {
-
-    const votes =
-      Number(answer.votes) || 0;
-
-    if (!groups[votes]) {
-      groups[votes] = [];
-    }
-
-    groups[votes].push(index);
-  });
-
-
-  /*
-    Calcul initial des points.
+    Calcul proportionnel initial.
   */
 
   const result =
@@ -174,101 +150,151 @@ function calculatePoints() {
       return {
         ...answer,
         exactPoints: exact,
-        points: Math.floor(exact)
+        points: Math.round(exact)
       };
 
     });
 
 
   /*
-    Points déjà distribués.
+    On force les réponses ayant
+    le même nombre de votes à avoir
+    exactement les mêmes points.
   */
 
-  let remaining =
-    100 -
+  const groups = {};
+
+  result.forEach((answer, index) => {
+
+    const votes =
+      Number(answer.votes) || 0;
+
+    if (!groups[votes]) {
+      groups[votes] = [];
+    }
+
+    groups[votes].push(index);
+  });
+
+
+  /*
+    Pour chaque groupe de votes identiques,
+    on utilise la moyenne des points calculés.
+  */
+
+  Object.values(groups).forEach(group => {
+
+    if (group.length > 1) {
+
+      const average =
+        Math.round(
+          group.reduce(
+            (sum, index) =>
+              sum + result[index].points,
+            0
+          ) / group.length
+        );
+
+      group.forEach(index => {
+        result[index].points = average;
+      });
+    }
+  });
+
+
+  /*
+    Ajustement pour arriver exactement à 100.
+  */
+
+  let totalPoints =
     result.reduce(
       (sum, answer) =>
         sum + answer.points,
       0
     );
 
-
-  /*
-    On classe les groupes selon
-    leur reste décimal.
-
-    IMPORTANT :
-    on donne toujours le même bonus
-    à toutes les réponses d'un même groupe.
-  */
-
-  const sortedGroups =
-    Object.values(groups).sort((groupA, groupB) => {
-
-      const decimalA =
-        result[groupA[0]].exactPoints -
-        Math.floor(
-          result[groupA[0]].exactPoints
-        );
-
-      const decimalB =
-        result[groupB[0]].exactPoints -
-        Math.floor(
-          result[groupB[0]].exactPoints
-        );
-
-      return decimalB - decimalA;
-    });
+  let difference =
+    100 - totalPoints;
 
 
   /*
-    Distribution des points restants.
-
-    On ne donne un point supplémentaire
-    à un groupe que si on peut le donner
-    à TOUTES ses réponses.
+    On ajuste les réponses une par une,
+    mais jamais à l'intérieur d'un groupe
+    ayant le même nombre de votes.
   */
 
-  for (const group of sortedGroups) {
+  const uniqueGroups =
+    Object.values(groups);
 
-    if (
-      remaining >= group.length
-    ) {
 
-      group.forEach(index => {
-        result[index].points++;
-      });
+  if (difference !== 0) {
 
-      remaining -= group.length;
+    for (const group of uniqueGroups) {
+
+      if (difference === 0) {
+        break;
+      }
+
+      /*
+        Pour une réponse unique :
+        on peut ajouter/retirer 1 point.
+      */
+
+      if (group.length === 1) {
+
+        const index = group[0];
+
+        if (difference > 0) {
+          result[index].points++;
+          difference--;
+        }
+
+        else if (
+          difference < 0 &&
+          result[index].points > 0
+        ) {
+          result[index].points--;
+          difference++;
+        }
+      }
     }
   }
 
 
   /*
-    Sécurité pour arriver exactement à 100.
+    Dernière sécurité :
+    si nécessaire, on répartit encore
+    sur des groupes entiers.
   */
 
-  if (remaining > 0) {
+  if (difference !== 0) {
 
-    for (let i = result.length - 1; i >= 0; i--) {
+    for (const group of uniqueGroups) {
 
-      const currentVotes =
-        result[i].votes;
-
-      const previousVotes =
-        i > 0
-          ? result[i - 1].votes
-          : null;
-
-      if (
-        currentVotes !== previousVotes
-      ) {
-
-        result[i].points += remaining;
-
-        remaining = 0;
-
+      if (difference === 0) {
         break;
+      }
+
+      if (difference > 0) {
+
+        group.forEach(index => {
+          if (difference > 0) {
+            result[index].points++;
+            difference--;
+          }
+        });
+
+      } else {
+
+        group.forEach(index => {
+          if (
+            difference < 0 &&
+            result[index].points > 0
+          ) {
+            result[index].points--;
+            difference++;
+          }
+        });
       }
     }
   }
@@ -276,6 +302,7 @@ function calculatePoints() {
 
   return result;
 }
+
 function answerPoints(answer) {
 
   if (!answer) {
