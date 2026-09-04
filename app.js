@@ -898,28 +898,21 @@ function renderAdminTeam(team, name) {
 
       <div class="team-buttons">
 
-        <button
-          data-action="team"
-          data-team="${team}"
-        >
-          ${active ? "✓ Joue" : "Faire jouer"}
-        </button>
+  <button
+    data-action="team"
+    data-team="${team}"
+  >
+    ${active ? "✓ Joue" : "Faire jouer"}
+  </button>
 
-        <button
-          data-action="add"
-          data-team="${team}"
-        >
-          + points
-        </button>
+  <button
+    data-action="adjust"
+    data-team="${team}"
+  >
+    Ajuster les points
+  </button>
 
-        <button
-          data-action="minus"
-          data-team="${team}"
-        >
-          − 5
-        </button>
-
-      </div>
+</div>
 
     </div>
 
@@ -1125,35 +1118,43 @@ if (action === "revealall") {
            AJOUTER DES POINTS
         ------------------------- */
 
-        if (action === "add") {
+      if (action === "adjust") {
 
-          const team =
-            Number(btn.dataset.team);
+  const team =
+    Number(btn.dataset.team);
 
-          state.scores[team] +=
-            totalAvailablePoints();
+  const value =
+    prompt(
+      `Ajuster les points de ${
+        team === 0
+          ? "TEAM ALEX"
+          : "TEAM MARION"
+      }\n\nScore actuel : ${
+        state.scores[team]
+      }\n\nEntrez le nombre de points à ajouter ou retirer :`,
+      "0"
+    );
 
-          saveState();
-        }
+  if (value === null) {
+    return;
+  }
 
+  const points =
+    Number(value);
 
-        /* -------------------------
-           RETIRER 5 POINTS
-        ------------------------- */
+  if (Number.isNaN(points)) {
+    alert("Veuillez entrer un nombre valide.");
+    return;
+  }
 
-        if (action === "minus") {
+  state.scores[team] =
+    Math.max(
+      0,
+      state.scores[team] + points
+    );
 
-          const team =
-            Number(btn.dataset.team);
-
-          state.scores[team] =
-            Math.max(
-              0,
-              state.scores[team] - 5
-            );
-
-          saveState();
-        }
+  saveState();
+}
 
 
         /* -------------------------
