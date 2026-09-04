@@ -590,10 +590,13 @@ const answers =
 
                   <div class="answer-points">
 
-                  ${isRevealed ? a.points : "?"}
+  ${
+    isRevealed
+      ? `${a.points} pts <span>(${a.votes} personnes)</span>`
+      : "?"
+  }
 
-                  </div>
-
+</div>
                 </div>
 
               `;
