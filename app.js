@@ -134,94 +134,145 @@ function calculatePoints() {
     return [];
   }
 
-  // Calcul proportionnel exact
-  const result = topSix.map(answer => {
+  /*
+    On regroupe les réponses qui ont
+    exactement le même nombre de votes.
 
-    const exact =
-      (Number(answer.votes) / totalVotes) * 100;
+    Exemple :
+    6 votes + 6 votes = même groupe
+    donc forcément mêmes points.
+  */
 
-    return {
-      ...answer,
-      exactPoints: exact,
-      points: Math.floor(exact)
-    };
+  const groups = {};
 
+  topSix.forEach((answer, index) => {
+
+    const votes =
+      Number(answer.votes) || 0;
+
+    if (!groups[votes]) {
+      groups[votes] = [];
+    }
+
+    groups[votes].push(index);
   });
 
-  // Points déjà attribués
-  let totalPoints =
+
+  /*
+    Calcul initial des points.
+  */
+
+  const result =
+    topSix.map(answer => {
+
+      const votes =
+        Number(answer.votes) || 0;
+
+      const exact =
+        (votes / totalVotes) * 100;
+
+      return {
+        ...answer,
+        exactPoints: exact,
+        points: Math.floor(exact)
+      };
+
+    });
+
+
+  /*
+    Points déjà distribués.
+  */
+
+  let remaining =
+    100 -
     result.reduce(
       (sum, answer) =>
         sum + answer.points,
       0
     );
 
-  // On ajoute les points manquants
-  // en partant de la dernière réponse.
-  //
-  // Si deux réponses sont à égalité,
-  // elles restent à égalité.
-
-  for (
-    let i = result.length - 1;
-    i >= 0 && totalPoints < 100;
-    i--
-  ) {
-
-    const currentVotes =
-      Number(result[i].votes) || 0;
-
-    const previousVotes =
-      i > 0
-        ? Number(result[i - 1].votes) || 0
-        : null;
-
-    // Si cette réponse est à égalité avec
-    // la précédente, on ne lui donne pas
-    // le point seule.
-    if (
-      previousVotes !== null &&
-      currentVotes === previousVotes
-    ) {
-      continue;
-    }
-
-    result[i].points++;
-    totalPoints++;
-  }
 
   /*
-    Si un point reste parce que les dernières
-    réponses sont à égalité, on cherche une
-    réponse qui n'est pas à égalité avec sa voisine.
+    On classe les groupes selon
+    leur reste décimal.
+
+    IMPORTANT :
+    on donne toujours le même bonus
+    à toutes les réponses d'un même groupe.
   */
 
-  if (totalPoints < 100) {
+  const sortedGroups =
+    Object.values(groups).sort((groupA, groupB) => {
 
-    for (
-      let i = 0;
-      i < result.length && totalPoints < 100;
-      i++
+      const decimalA =
+        result[groupA[0]].exactPoints -
+        Math.floor(
+          result[groupA[0]].exactPoints
+        );
+
+      const decimalB =
+        result[groupB[0]].exactPoints -
+        Math.floor(
+          result[groupB[0]].exactPoints
+        );
+
+      return decimalB - decimalA;
+    });
+
+
+  /*
+    Distribution des points restants.
+
+    On ne donne un point supplémentaire
+    à un groupe que si on peut le donner
+    à TOUTES ses réponses.
+  */
+
+  for (const group of sortedGroups) {
+
+    if (
+      remaining >= group.length
     ) {
 
-      const currentVotes =
-        Number(result[i].votes) || 0;
+      group.forEach(index => {
+        result[index].points++;
+      });
 
-      const nextVotes =
-        i < result.length - 1
-          ? Number(result[i + 1].votes) || 0
+      remaining -= group.length;
+    }
+  }
+
+
+  /*
+    Sécurité pour arriver exactement à 100.
+  */
+
+  if (remaining > 0) {
+
+    for (let i = result.length - 1; i >= 0; i--) {
+
+      const currentVotes =
+        result[i].votes;
+
+      const previousVotes =
+        i > 0
+          ? result[i - 1].votes
           : null;
 
       if (
-        nextVotes === null ||
-        currentVotes !== nextVotes
+        currentVotes !== previousVotes
       ) {
 
-        result[i].points++;
-        totalPoints++;
+        result[i].points += remaining;
+
+        remaining = 0;
+
+        break;
       }
     }
   }
+
 
   return result;
 }
@@ -243,7 +294,6 @@ function answerPoints(answer) {
     ? found.points
     : 0;
 }
-
 
 /* =========================================================
    OUTILS
@@ -501,11 +551,7 @@ const answers =
 
                   <div class="answer-points">
 
-                    ${
-                      isRevealed
-                        ? a.points
-                        : "?"
-                    }
+                   ${isRevealed ? answerPoints(a) : "?"}
 
                   </div>
 
