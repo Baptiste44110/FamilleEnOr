@@ -691,3 +691,11 @@ code {
   padding: 4px 7px;
   font-size: 11px;
 }
+.controls.lower {
+  display: flex;
+  align-items: center;
+}
+
+.controls.lower button[data-action="revealall"] {
+  margin-left: auto;
+}
