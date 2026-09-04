@@ -399,7 +399,20 @@ function renderResults() {
             <small>points</small>
           </div>
 
-        </div>
+               </div>
+
+        ${
+          !isDisplay
+            ? `
+              <button
+                class="start-btn new-game-btn"
+                data-action="newgame"
+              >
+                🎮 NOUVELLE PARTIE
+              </button>
+            `
+            : ""
+        }
 
       </div>
 
@@ -1251,6 +1264,45 @@ if (action === "revealall") {
   return;
 }
 
+
+        /* -------------------------
+   NOUVELLE PARTIE
+------------------------- */
+
+if (action === "newgame") {
+
+  if (
+    !confirm(
+      "Voulez-vous vraiment commencer une nouvelle partie ?"
+    )
+  ) {
+    return;
+  }
+
+  state.screen = "home";
+
+  state.questionIndex = 0;
+
+  state.revealed = [];
+
+  state.lastRevealed = null;
+
+  state.scores = [0, 0];
+
+  state.crosses = [0, 0];
+
+  // Alex commence la nouvelle partie
+  state.startingTeam = 0;
+
+  state.activeTeam = 0;
+
+  state.multiplier = 1;
+
+  saveState();
+
+  return;
+}
+        
         /* -------------------------
            QUESTION SUIVANTE
         ------------------------- */
