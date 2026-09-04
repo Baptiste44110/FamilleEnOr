@@ -676,3 +676,9 @@ code {
     opacity: 1;
   }
 }
+.answer-points span {
+  display: inline;
+  font-size: 0.55em;
+  opacity: 0.8;
+  margin-left: 6px;
+}
