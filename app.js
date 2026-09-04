@@ -393,13 +393,25 @@ function renderHome() {
 
           <br><br>
 
-          À tour de rôle, chaque équipe propose
-          une réponse à la question.
+         À tour de rôle, chaque équipe propose
+une réponse à la question.
 
-          <br>
+<br><br>
 
-          Une mauvaise réponse donne une
-          <strong>✕</strong>.
+<strong>🎯 Le but :</strong>
+
+trouver les réponses qui ont été
+les plus données par le public.
+
+<br>
+
+Plus une réponse a été populaire,
+plus elle rapporte de points !
+
+<br><br>
+
+Une mauvaise réponse donne une
+<strong>✕</strong>.
 
           <br>
 
