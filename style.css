@@ -293,7 +293,7 @@ body {
   min-height: 68px;
 
   display: grid;
-  grid-template-columns: 1fr 115px;
+  grid-template-columns: 3fr 1fr;
 
   background: linear-gradient(
     90deg,
@@ -330,9 +330,8 @@ body {
   align-items: center;
   justify-content: center;
 
-  min-width: 220px;
-  padding: 0 20px;
-  box-sizing: border-box;
+  min-width: 0;
+  padding: 0 15px;
 
   border-left: 2px solid rgba(245, 197, 66, 0.4);
 
