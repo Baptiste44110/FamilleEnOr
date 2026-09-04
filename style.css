@@ -696,6 +696,11 @@ code {
   align-items: center;
 }
 
+.controls.lower {
+  display: flex;
+  align-items: center;
+}
+
 .controls.lower button[data-action="revealall"] {
   margin-left: auto;
 }
