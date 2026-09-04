@@ -804,18 +804,25 @@ function renderAdmin() {
 
         <div class="controls">
 
-          <button data-action="prev">
-            ← Question précédente
-          </button>
+  <button data-action="prev">
+    ← Question précédente
+  </button>
 
-          <button
-            data-action="next"
-            class="primary"
-          >
-            Question suivante →
-          </button>
+  <button
+    data-action="next"
+    class="primary"
+  >
+    Question suivante →
+  </button>
 
-        </div>
+  <button
+    data-action="endgame"
+    class="danger"
+  >
+    🏆 Fin de partie
+  </button>
+
+</div>
 
       </section>
 
