@@ -578,7 +578,7 @@ const answers =
 
                   <div class="answer-points">
 
-                   ${isRevealed ? answerPoints(a) : "?"}
+                  ${isRevealed ? a.points : "?"}
 
                   </div>
 
