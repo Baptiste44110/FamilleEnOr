@@ -659,8 +659,6 @@ const answers =
              <div class="answer-row ${
   isRevealed ? "revealed" : ""
 } ${
-  state.allRevealed ? "all-revealed" : ""
-} ${
   state.lastRevealed === i
     ? "reveal-animation"
     : ""
@@ -1132,7 +1130,6 @@ if (action === "revealall") {
   // Révéler les 6 réponses du Top 6
   state.revealed = [0, 1, 2, 3, 4, 5];
 
-  state.allRevealed = true;
 
   // IMPORTANT :
   // aucun point n'est ajouté ici.
