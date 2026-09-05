@@ -839,3 +839,12 @@ code {
     transform: translateY(70%);
   }
 }
+*
+.answer-row.all-revealed .answer-text,
+.answer-row.all-revealed .answer-points {
+  color: #ff3b3b;
+}
+
+.answer-row.all-revealed .answer-points {
+  border-left-color: rgba(255, 59, 59, 0.5);
+}
