@@ -176,7 +176,6 @@ const QUESTIONS = [
   { text: "Vendredi", votes: 34 },
   { text: "Dimanche", votes: 13 },
   { text: "Jeudi", votes: 10 },
-  { text: "Tous", votes: 1 }
 ]
 
   },
