@@ -1,3 +1,15 @@
+const GAME_CONFIG = {
+  title: "Une Famille en Or",
+  event: "Anniversaire",
+  name: "Alex & Marion",
+
+  teams: [
+    "TEAM ALEX",
+    "TEAM MARION"
+  ]
+};
+
+
 // Les réponses du sondage seront à renseigner ici.
 // Pour chaque question, ajoute les 6 réponses les plus citées.
 // "votes" = nombre de personnes ayant donné cette réponse.
