@@ -12,6 +12,9 @@ const defaultState = {
 
   lastRevealed: null,
 
+  allRevealed: false,
+revealedBeforeAll: [],
+
   // Scores des équipes
   scores: [0, 0],
 
@@ -656,10 +659,16 @@ const answers =
               const isRevealed =
                 state.revealed.includes(i);
 
+              const revealedByAll =
+              state.allRevealed &&
+              !state.revealedBeforeAll.includes(i);
+
               return `
 
              <div class="answer-row ${
   isRevealed ? "revealed" : ""
+} ${
+  revealedByAll ? "revealed-by-all" : ""
 } ${
   state.lastRevealed === i
     ? "reveal-animation"
@@ -1129,13 +1138,15 @@ state.scores[state.activeTeam] +=
 
 if (action === "revealall") {
 
-  // Révéler les 6 réponses du Top 6
+  // Mémoriser les réponses déjà trouvées
+  state.revealedBeforeAll = [...state.revealed];
+
+  // Afficher les 6 réponses
   state.revealed = [0, 1, 2, 3, 4, 5];
 
+  state.allRevealed = true;
 
-  // IMPORTANT :
-  // aucun point n'est ajouté ici.
-
+  // Pas d'animation individuelle
   state.lastRevealed = null;
 
   saveState();
