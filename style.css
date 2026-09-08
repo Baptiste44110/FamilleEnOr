@@ -840,3 +840,12 @@ code {
   }
 }
 
+.answer-row.revealed-by-all .answer-text,
+.answer-row.revealed-by-all .answer-points {
+  color: #ff3b3b;
+}
+
+.answer-row.revealed-by-all .answer-points {
+  border-left-color: rgba(255, 59, 59, 0.5);
+}
+
