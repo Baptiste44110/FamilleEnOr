@@ -1321,30 +1321,32 @@ if (action === "newgame") {
 
         if (action === "next") {
 
-          if (
-            state.questionIndex <
-            QUESTIONS.length - 1
-          ) {
+  if (
+    state.questionIndex <
+    QUESTIONS.length - 1
+  ) {
 
-            state.questionIndex++;
+    state.questionIndex++;
 
-            state.revealed = [];
+    state.revealed = [];
 
-            state.crosses = [0, 0];
+    state.allRevealed = false;
+    state.revealedBeforeAll = [];
 
-            // L'équipe qui commence change
-            state.startingTeam =
-              state.startingTeam === 0
-                ? 1
-                : 0;
+    state.crosses = [0, 0];
 
-            state.activeTeam =
-              state.startingTeam;
+    // L'équipe qui commence change
+    state.startingTeam =
+      state.startingTeam === 0
+        ? 1
+        : 0;
 
-            saveState();
-          }
-        }
+    state.activeTeam =
+      state.startingTeam;
 
+    saveState();
+  }
+}
 
         /* -------------------------
            QUESTION PRÉCÉDENTE
@@ -1359,6 +1361,9 @@ if (action === "newgame") {
             state.questionIndex--;
 
             state.revealed = [];
+
+            state.allRevealed = false;
+state.revealedBeforeAll = [];
 
             state.crosses = [0, 0];
 
