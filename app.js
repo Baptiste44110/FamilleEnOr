@@ -341,18 +341,18 @@ function escapeHtml(str) {
    ========================================================= */
 function renderResults() {
 
-  const alex = state.scores[0];
-  const marion = state.scores[1];
+ const score1 = state.scores[0];
+const score2 = state.scores[1];
 
   let winner = "";
 
-  if (alex > marion) {
-    winner = "TEAM ALEX";
-  } else if (marion > alex) {
-    winner = "TEAM MARION";
-  } else {
-    winner = "ÉGALITÉ";
-  }
+if (score1 > score2) {
+  winner = GAME_CONFIG.teams[0];
+} else if (score2 > score1) {
+  winner = GAME_CONFIG.teams[1];
+} else {
+  winner = "ÉGALITÉ";
+}
 
   return `
     <main class="results">
@@ -388,14 +388,14 @@ function renderResults() {
         <div class="final-scores">
 
           <div class="final-team">
-            <span>TEAM ALEX</span>
-            <strong>${alex}</strong>
+            <span>${escapeHtml(GAME_CONFIG.teams[0])}</span>
+           <strong>${score1}</strong>
             <small>points</small>
           </div>
 
           <div class="final-team">
-            <span>TEAM MARION</span>
-            <strong>${marion}</strong>
+           <span>${escapeHtml(GAME_CONFIG.teams[1])}</span>
+            <strong>${score2}</strong>
             <small>points</small>
           </div>
 
@@ -619,7 +619,7 @@ const answers =
 
       <div class="topbar">
 
-        ${renderTeam(0, "TEAM ALEX")}
+        ${renderTeam(0, GAME_CONFIG.teams[0])}
 
         <div class="question-box">
 
@@ -636,7 +636,7 @@ const answers =
 
         </div>
 
-        ${renderTeam(1, "TEAM MARION")}
+        ${renderTeam(1, GAME_CONFIG.teams[1])}
 
       </div>
 
@@ -759,9 +759,9 @@ function renderAdmin() {
 
         <div class="teams">
 
-          ${renderAdminTeam(0, "TEAM ALEX")}
+          ${renderAdminTeam(0, GAME_CONFIG.teams[0])}
 
-          ${renderAdminTeam(1, "TEAM MARION")}
+          ${renderAdminTeam(1, GAME_CONFIG.teams[1])}
 
         </div>
 
