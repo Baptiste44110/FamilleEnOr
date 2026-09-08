@@ -1,11 +1,11 @@
 const GAME_CONFIG = {
   title: "Une Famille en Or",
   event: "Anniversaire",
-  name: "Alex & Marion",
+  name: "Anat & Ophé",
 
   teams: [
-    "TEAM ALEX",
-    "TEAM MARION"
+    "TEAM ANAT",
+    "TEAM OPHE"
   ]
 };
 
