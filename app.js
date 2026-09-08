@@ -459,11 +459,11 @@ function renderHome() {
       <div class="home-card">
 
         <div class="anniv">
-          ANNIVERSAIRE
+          ${escapeHtml(GAME_CONFIG.event)}
         </div>
 
         <h1>
-          Alex & Marion
+           ${escapeHtml(GAME_CONFIG.name)}
         </h1>
 
         <div class="subtitle">
@@ -474,8 +474,10 @@ function renderHome() {
         <div class="rules">
 
           <strong>Deux équipes s'affrontent :</strong><br>
-
-          Team Alex 🆚 Team Marion
+          
+            ${escapeHtml(GAME_CONFIG.teams[0])}
+            🆚
+            ${escapeHtml(GAME_CONFIG.teams[1])}
 
           <br><br>
 
@@ -1223,12 +1225,10 @@ if (action === "revealall") {
   const team =
     Number(btn.dataset.team);
 
-  const value =
+    const value =
     prompt(
       `Ajuster les points de ${
-        team === 0
-          ? "TEAM ALEX"
-          : "TEAM MARION"
+        GAME_CONFIG.teams[team]
       }\n\nScore actuel : ${
         state.scores[team]
       }\n\nEntrez le nombre de points à ajouter ou retirer :`,
