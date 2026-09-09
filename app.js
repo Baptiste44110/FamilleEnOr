@@ -793,7 +793,7 @@ function renderAdmin() {
           <button
   data-action="revealall"
 >
-  👁 Afficher les 6 réponses
+  👁 Afficher les réponses restantes
 </button>
 
           
