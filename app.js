@@ -1161,6 +1161,8 @@ if (action === "revealall") {
 
   const team = state.activeTeam;
 
+         state.lastRevealed = null;
+
   // Une équipe qui a déjà 2 croix ne peut plus jouer.
   if (state.crosses[team] >= 2) {
     return;
