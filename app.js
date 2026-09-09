@@ -447,6 +447,7 @@ function render() {
 
   // L'animation ne doit concerner
   // que le dernier dévoilement.
+  state.lastRevealed = null;
 }
 
 
@@ -1160,8 +1161,6 @@ if (action === "revealall") {
        if (action === "wrong") {
 
   const team = state.activeTeam;
-
-         state.lastRevealed = null;
 
   // Une équipe qui a déjà 2 croix ne peut plus jouer.
   if (state.crosses[team] >= 2) {
